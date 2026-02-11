@@ -2,7 +2,8 @@
 .env
 last_scroll_id.txt
 data.*
-__pycache__
+\__pycache__
+.pytest_cache
 *.pyc
 *.pyo
 *.pkl
