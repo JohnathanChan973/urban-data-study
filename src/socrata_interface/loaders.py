@@ -66,7 +66,6 @@
     #         self.download_schema(dataset_id)
 
     # def download_schema(self, dataset_id, outfile=None):
-    #     self._ensure_logger()
     #     if outfile is None:
     #         outfile = f"schema_{dataset_id}.txt"
     #     data_file = self.datadir / f"{dataset_id}.json"

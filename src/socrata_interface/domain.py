@@ -1,40 +1,4 @@
-import time
-from sodapy import Socrata
-from functools import wraps
-
-MAX_TIMEOUT = 60
-
-def setup(times=3, delay=2):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(self, *args, **kwargs):
-            if not self.log:
-                self.log = self.setup_logger(self.domain)
-
-            self.log.info(f"Task Started for {self.domain}: {func.__name__}")
-
-            for i in range(times):
-                try:
-                    if not self.client:
-                        print(f"Initializing client for {self.domain}...")
-                        self.client = Socrata(self.domain, self.token, timeout=self.timeout)
-                    elif self.timeout > self.client.timeout:
-                        self.client.timeout = self.timeout
-                    self.timeout = min(self.timeout*2, MAX_TIMEOUT)
-
-                    result = func(self, *args, **kwargs)
-                    
-                    self.log.info(f"Task Successful for {self.domain}: {func.__name__}")
-                    return result
-                
-                except Exception as e:
-                    if i == times - 1:
-                        self.log.error(f"Final failure in for {self.domain}'s {func.__name__}: {str(e)}")
-                        raise e
-                    self.log.warning(f"Attempt {i+1}/{times} failed for {self.domain}'s {func.__name__}: {str(e)}")
-                    time.sleep(delay)
-        return wrapper
-    return decorator
+from decorators import setup
 
 class Domain:    
     def __init__(self, domain, token=None, timeout=15):
@@ -83,12 +47,12 @@ class Domain:
     def row_counts(self, id):
         return self.select(id, "count(*)")
     
-    def null_counts(self, dataset_id, cols):
+    def null_counts(self, id, cols):
         """
         Docstring for null_counts
         
         :param self: object
-        :param dataset_id: id of the desired dataset
+        :param id: id of the desired dataset
         :param cols: columns object from metadata of the same id
         """
         usable_cols = []
@@ -98,17 +62,17 @@ class Domain:
             dtype = col.get("dataTypeName", "")
 
             if dtype in SKIP_TYPES:
-                self.log.debug(f"{dataset_id}: Skipping geometry column '{field}' (type: {dtype})")
+                self.log.debug(f"{id}: Skipping geometry column '{field}' (type: {dtype})")
                 continue
             else:
                 usable_cols.append(self._build_chunk_select_clause(field, dtype))
         
         if not usable_cols:
-            self.log.warning(f"{dataset_id}: No queryable columns found")
+            self.log.warning(f"{id}: No queryable columns found")
             return []
         
         select_clause = ', '.join(usable_cols)
-        return self.select(dataset_id, select_clause)
+        return self.select(id, select_clause)
 
     def _build_chunk_select_clause(self, field, dtype):
         """

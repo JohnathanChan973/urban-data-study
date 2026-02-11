@@ -1,19 +1,17 @@
-def extract_schema(metadata):
-    """
-    Docstring for extract_columns_from_dataset
-    
-    :param dataset: Tuple containing the dataset's id and their columns
-    """
+def extract_columns(id, df):
     if df.empty:
         return None
-    str_cols = df.select_dtypes(include=["object", "string"]).columns.tolist()
-    num_cols = df.select_dtypes(include=["number", "float", "int"]).columns.tolist()
-    cols = list(dict.fromkeys(str_cols + num_cols))  # preserve order, avoid duplicates
     column_dict = {}
-    for col in cols:
+    for col in df.columns:
         series = df[col]
-        column_dict[(dataset_id, col)] = series
+        column_dict[(id, col)] = series
     return column_dict
+
+def extract_schema(metadata):
+    cols = metadata.get("columns", None)
+    if cols:
+        return [c.get("fieldName") for c in cols if c.get("fieldName")]
+    return None
 
 # def get_relevant_metadata(self, dataset_id, outfile=None, retry_timeout=None):
 #         self._ensure_logger()
