@@ -1,7 +1,7 @@
 .venv
 .env
 last_scroll_id.txt
-data.*
+data
 \__pycache__
 .pytest_cache
 *.pyc
