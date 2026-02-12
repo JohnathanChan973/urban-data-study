@@ -1,41 +1,32 @@
-# utils.py
 from pathlib import Path
 import logging
 
-"""
-Utility functions for DeepJoin
-"""
-
-def build_column_text(col_name, values):
-    """
-    Create DeepJoin's text representation:
-    'column: borough. sample values: Manhattan, Queens, Bronx'
-    """
-    sample_text = ", ".join([str(v) for v in values if v])
-    return f"Column: {col_name}. Sample values: {sample_text}"
-
 BASE = Path(__file__).resolve().parent.parent / "data"
 
-def setup_logger(name):
+def setup_dir(domain, name=None):
+    BASE.mkdir(exist_ok=True)
+    citydir = (BASE / "domain_data")
+    citydir.mkdir(exist_ok=True)
+    domaindir = (citydir / str(domain))
+    domaindir.mkdir(exist_ok=True)
+    if name:
+        newdir = (domaindir / name)
+        newdir.mkdir(exist_ok=True)
+        return newdir
+
+def setup_logger(domain):
     """
     Establishes a logger singleton for the given domain
     
-    :param name: name of the socrata domain being used
+    :param domain: name of the domain being used
     """
-    BASE.mkdir(exist_ok=True)
-    citydir = (BASE / "city_data")
-    citydir.mkdir(exist_ok=True)
-    domaindir = (citydir / str(name))
-    domaindir.mkdir(exist_ok=True)
+    logdir = setup_dir(domain, "logs")
 
-    logger = logging.getLogger(name)
+    logger = logging.getLogger(domain)
     logger.setLevel(logging.DEBUG)
 
     if logger.handlers:
         return logger
-    
-    logdir = (domaindir / "logs")
-    logdir.mkdir(exist_ok=True)
 
     # Handlers
     error_handler = logging.FileHandler(logdir / "errors.log", encoding="utf-8")
@@ -61,3 +52,14 @@ def destroy_logger(name):
     for handler in logger.handlers[:]:
         handler.close()
         logger.removeHandler(handler)
+
+"""
+Utility functions for DeepJoin
+"""
+def build_column_text(col_name, values):
+    """
+    Create DeepJoin's text representation:
+    'column: borough. sample values: Manhattan, Queens, Bronx'
+    """
+    sample_text = ", ".join([str(v) for v in values if v])
+    return f"Column: {col_name}. Sample values: {sample_text}"

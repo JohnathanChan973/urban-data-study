@@ -104,9 +104,8 @@ TEST1 = "@TEST"
 TEST2 = TEST1[1:]
 
 # Helpers (Don't call API thesmselves)
-# Maybe move to util
 def test_build_chunk_select_clause():
-    domain = Domain("data.weho.org")
+    domain = Domain("data.test.org")
     quoted = f"`{TEST1}`"
     with patch.object(domain, "_quote_field_name", return_value = quoted):
         test1 = domain._build_chunk_select_clause(f"{TEST1}", "url")    
@@ -119,7 +118,7 @@ def test_build_chunk_select_clause():
     assert test2 == expected2
 
 def test_quote_field_name():
-    domain = Domain("data.weho.org")
+    domain = Domain("data.test.org")
     quoted = domain._quote_field_name(TEST1)
     no_quotes = domain._quote_field_name(TEST2)
 

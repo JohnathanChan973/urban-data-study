@@ -10,97 +10,27 @@ def extract_columns(id, df):
 def extract_schema(metadata):
     cols = metadata.get("columns", None)
     if cols:
-        return [c.get("fieldName") for c in cols if c.get("fieldName")]
+        return [{
+                "name": c.get("fieldName"), 
+                "type": c.get("dataTypeName"),
+                } for c in cols if c.get("fieldName")]
     return None
 
-# def get_relevant_metadata(metadata):
-#     try:      
-#         # Build relevant metadata structure
-#         relevant_metadata = {
-#             "category": metadata.get("category"),
-#             "format": metadata.get("viewType"),
-#             "tags": metadata.get("tags"),
-#             "downloadCount": metadata.get("downloadCount"),
-#             "viewCount": metadata.get("viewCount"),
-#             "createdAt": metadata.get("createdAt"),
-#             "publicationDate": metadata.get("publicationDate"),
-#             "updatedAt": metadata.get("viewLastModified")
-#         }
-        
-#         # Only process columns for tabular datasets that are queryable
-#         if relevant_metadata.get("format") == "tabular":
-#             # Check if this is a queryable dataset
-#             asset_type = metadata.get("assetType", "")
-            
-#             # Skip column stats for non-queryable asset types
-#             if asset_type in ['filter', 'href', 'external', 'link', 'file', 'chart', 'map', 'story']:
-#                 self.log.info(f"{dataset_id}: Non-queryable asset type '{asset_type}', skipping column stats")
-                
-#                 # Still include basic schema info if available
-#                 cols = metadata.get("columns") or []
-#                 if cols:
-#                     relevant_columns = [
-#                         {
-#                             "name": c.get("fieldName"), 
-#                             "type": c.get("dataTypeName"),
-#                         }
-#                         for c in cols if c.get("fieldName")
-#                     ]
-#                     relevant_metadata["columns"] = relevant_columns
-                    
-#                     # Use metadata's rowCount if available
-#                     if "rowCount" in metadata:
-#                         relevant_metadata["rowCount"] = int(metadata["rowCount"])
-                
-#                 return relevant_metadata
-            
-#             # For queryable datasets (assetType == 'dataset'), proceed normally
-#             cols = metadata.get("columns") or []
-#             relevant_columns = [
-#                 {
-#                     "name": c.get("fieldName"), 
-#                     "type": c.get("dataTypeName"),
-#                 }
-#                 for c in cols if c.get("fieldName")
-#             ]
-            
-#             if relevant_columns:
-#                 try:
-#                     counts = self.fetch_all_column_stats(dataset_id, cols)
-                    
-#                     if counts and "total_rows" in counts:
-#                         relevant_metadata["rowCount"] = int(counts["total_rows"])
-                        
-#                         for col in relevant_columns:
-#                             name = col["name"]
-#                             col["nulls"] = int(counts.get(f"{name}_nulls", 0))
-#                             col["semantic_nulls"] = int(counts.get(f"{name}_semantic_nulls", 0))
-                        
-#                         relevant_metadata["columns"] = relevant_columns
-#                     else:
-#                         self.log.warning(f"{dataset_id}: column stats incomplete, skipping column info")
-                        
-#                 except Exception as e:
-#                     self.log.warning(f"{dataset_id}: failed to fetch column stats — {e}")
-#             else:
-#                 self.log.warning(f"{dataset_id}: schema empty — skipping")
-        
-#         return relevant_metadata
-        
-#     except Exception as e:
-#         error_str = str(e).lower()
-#         is_timeout = 'timeout' in error_str or 'timed out' in error_str
-#         is_connection = 'connection' in error_str or 'remote' in error_str
-        
-#         if is_timeout:
-#             self.log.error(f"{dataset_id}: timeout after {timeout_to_use}s — {e}")
-#         elif is_connection:
-#             self.log.error(f"{dataset_id}: connection error — {e}")
-#         else:
-#             self.log.error(f"{dataset_id}: failed to fetch metadata — {e}")
-        
-#         return None
-
+def extract_relevant_metadata(metadata):
+    # Build relevant metadata structure
+    relevant_metadata = {
+        "category": metadata.get("category"),
+        "format": metadata.get("viewType"),
+        "tags": metadata.get("tags"),
+        "downloadCount": metadata.get("downloadCount"),
+        "viewCount": metadata.get("viewCount"),
+        "createdAt": metadata.get("createdAt"),
+        "publicationDate": metadata.get("publicationDate"),
+        "updatedAt": metadata.get("viewLastModified")
+        }
+    
+    return relevant_metadata
+    
 #     def summarize_metadata(self): # relevant metadata must be downloaded first
 #         outpath = self.metadatadir / "summary"
 #         outpath.mkdir(exist_ok=True)
