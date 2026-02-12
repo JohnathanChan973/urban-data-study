@@ -16,7 +16,7 @@ class Domain:
         Calls the library, yields items one by one, 
         then ensures the big list is cleared.
         """
-        data = self.client.datasets(**kwargs)
+        data = self.client.datasets(**kwargs) # Also provides metadata
         
         # Yield each item individually
         for item in data:
@@ -34,7 +34,7 @@ class Domain:
 
     @setup()
     def dataset(self, id, all_data=False):
-        return self.client.get_all(id) if all_data else self.client.get(id)
+        return self.client.get_all(id) if all_data else self.client.get(id) # get_all will return a generator
     
     @setup()
     def metadata(self, id):

@@ -1,9 +1,9 @@
-from domain import Domain
+from socrata_interface.domain import Domain
 import requests
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
-from all_domain import All_Domain
-from plotter import All_Domain_Plotter
+from socrata_interface.all_domain import All_Domain
+from socrata_interface.plotter import All_Domain_Plotter
 import pandas as pd
 
 # with ThreadPoolExecutor(max_workers=10) as ex:
@@ -16,9 +16,6 @@ import pandas as pd
 #     future_map[f]: f.result()
 #     for f in future_map
 # }
-
-
-
 
 def main():
     # nola = Domain("data.nola.gov")
