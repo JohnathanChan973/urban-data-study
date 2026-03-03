@@ -1,4 +1,4 @@
-from decorators import setup
+from util.decorators import setup
 
 class Domain:    
     def __init__(self, domain, token=None, timeout=15):

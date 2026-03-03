@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 
 from domain import Domain
-from metadata_analysis import build_metadata_dataframe, summarize_metadata
+from lazo.metadata_analysis import build_metadata_dataframe, summarize_metadata
 
 
 def main() -> None:

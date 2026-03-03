@@ -1,0 +1,109 @@
+import socrata_interface.transformers as trans
+import pandas as pd
+from collections import Counter
+
+DATA = {'resource': {'name': 'NOPD Use of Force Incidents',
+   'id': '9mnw-mbde',
+   'type': 'dataset',
+   'updatedAt': '2026-03-03T08:30:18.000Z',
+   'createdAt': '2016-08-03T03:07:21.000Z',
+   'page_views': {'page_views_last_week': 1043,
+    'page_views_last_month': 4568,
+    'page_views_total': 242757,
+    'page_views_last_week_log': 10.027905996569885,
+    'page_views_last_month_log': 12.15766272720845,
+    'page_views_total_log': 17.889159314345548},
+   'columns_field_name': [
+    'subject_injured'],
+   'columns_datatype': [
+    'Text'],
+   'download_count': 7201,
+   'lens_view_type': 'tabular',
+   'lens_display_type': 'table',
+   'publication_date': '2021-10-28T15:33:49.000Z'},
+  'classification': {'categories': [],
+   'tags': [],
+   'domain_category': 'Public Safety and Preparedness',
+   'domain_tags': ['use of force'],},}
+
+METADATA = {
+ 'assetType': 'dataset',
+ 'category': 'Public Safety and Preparedness',
+ 'createdAt': 1470193641,
+ 'displayType': 'table',
+ 'downloadCount': 7201,
+ 'publicationDate': 1635435229,
+ 'rowsUpdatedAt': 1772526618,
+ 'viewCount': 242757,
+ 'viewLastModified': 1635435229,
+ 'viewType': 'tabular',
+ 'columns': [
+  {'id': 550825312,
+   'name': 'Subject Injured',
+   'dataTypeName': 'text',
+   'fieldName': 'subject_injured',
+   'renderTypeName': 'text',},],
+ 'tags': ['use of force']}
+
+def test_load_to_df():
+    df = trans.load_to_df([{'service_request': '2021-783285',
+  'geocoded_column': {'latitude': '29.992361741051177',
+   'longitude': '-90.11477935333389'},
+  ':@computed_region_ewbu_t8bu': '13008',
+  ':@computed_region_k37d_then': '1',
+  ':@computed_region_m56f_hbma': '235',
+  ':@computed_region_7fw3_kdpf': '50',
+  ':@computed_region_spev_d8jm': '3772',
+  ':@computed_region_sikx_bdeb': '235',
+  ':@computed_region_evki_aju8': '7',
+  ':@computed_region_u4yh_3wk9': '13008'},
+ {'service_request': '2024-1127064',
+  'geocoded_column': {'latitude': '30.05605380401344',
+   'longitude': '-89.95646571265702'},
+  ':@computed_region_ewbu_t8bu': '4879',
+  ':@computed_region_k37d_then': '5',
+  ':@computed_region_m56f_hbma': '172',
+  ':@computed_region_7fw3_kdpf': '20',
+  ':@computed_region_spev_d8jm': '4150',
+  ':@computed_region_sikx_bdeb': '172',
+  ':@computed_region_evki_aju8': '1',
+  ':@computed_region_u4yh_3wk9': '4879'}])
+    assert isinstance(df, pd.DataFrame)
+    assert not df.empty
+    assert len(df.columns) ==  10
+
+def test_extract_columns():
+    df = pd.DataFrame({"speed": [12, 13, 14], "car": ["honda", "toyota", "lexus"]})
+    dct = trans.extract_columns(1, df)
+    assert dct
+    assert len(dct) == 2
+    for k, v in dct.items():
+        assert isinstance(k, tuple)
+        assert len(k) == 2
+        assert isinstance(v, pd.Series)
+        assert len(v) == 3
+
+def test_extract_schema():
+    assert not trans.extract_schema(None)
+    meta_schem = trans.extract_schema(METADATA)
+    assert len(meta_schem) == 1
+    data_schem = trans.extract_schema(DATA)
+    assert meta_schem == data_schem
+
+def test_extract_relevant_metadata():
+    assert not trans.extract_relevant_metadata(None)
+    meta_meta = trans.extract_relevant_metadata(METADATA)
+    assert len(meta_meta) == 8
+    data_meta = trans.extract_relevant_metadata(DATA)
+    assert meta_meta == data_meta
+
+# def test_tags_meta():
+#     t1 = ["a", "b", "c"]
+#     t2 = ["b", "c", "d"]
+#     counts = Counter()
+#     trans.tags_meta(counts, t1)
+#     assert len(counts) == 3
+#     trans.tags_meta(counts, t2)
+#     trans.tags_meta(counts, None)
+#     assert len(counts) == 4
+#     assert counts == Counter(["a", "b", "c", "b", "c", "d"])

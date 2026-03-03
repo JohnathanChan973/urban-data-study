@@ -2,7 +2,7 @@ import time
 from sodapy import Socrata
 from requests.exceptions import ReadTimeout, SSLError
 from functools import wraps
-from utils import setup_logger
+from util.util import setup_logger
 
 def setup(times=3, delay=2, max_timeout = 60):
     def decorator(func):

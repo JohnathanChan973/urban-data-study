@@ -7,9 +7,9 @@ import concurrent.futures
 from sodapy import Socrata
 from tqdm import tqdm
 
-from encoder import embed, cosine
-from utils import build_column_text
-from sampler import sample_from_api
+from deepjoin.encoder import embed, cosine
+from util.util import build_column_text
+from deepjoin.sampler import sample_from_api
 
 NYC_DOMAIN = "data.cityofnewyork.us"
 

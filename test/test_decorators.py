@@ -1,5 +1,5 @@
 from unittest.mock import MagicMock, patch
-from decorators import setup, Socrata
+from util.decorators import setup, Socrata
 from requests import ReadTimeout
 import pytest
 
@@ -12,8 +12,8 @@ class MockDomain:
         self.timeout = INIT_TIMEOUT
         self.log = None
 
-@patch("decorators.Socrata")
-@patch("decorators.setup_logger")
+@patch("util.decorators.Socrata")
+@patch("util.decorators.setup_logger")
 def test_setup_decorator(mock_setup_logger, mock_socrata_class):
     mock_instance = MagicMock(spec=Socrata)
     mock_instance.timeout = INIT_TIMEOUT
@@ -43,8 +43,8 @@ def test_setup_decorator(mock_setup_logger, mock_socrata_class):
     # verify timeout logic
     assert mock_instance.timeout == 30
 
-@patch("decorators.Socrata")
-@patch("decorators.setup_logger")
+@patch("util.decorators.Socrata")
+@patch("util.decorators.setup_logger")
 def test_setup_failure(mock_setup_logger, mock_socrata_class):
     mock_instance = MagicMock(spec=Socrata)
     mock_socrata_class.return_value = mock_instance

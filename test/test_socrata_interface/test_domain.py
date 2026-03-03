@@ -2,8 +2,8 @@ from unittest.mock import patch, MagicMock
 from socrata_interface.domain import Domain
 import pytest
 
-@patch("decorators.Socrata")
-@patch("decorators.setup_logger")
+@patch("util.decorators.Socrata")
+@patch("util.decorators.setup_logger")
 def test_datasets_generator_logic(mock_setup_logger, mock_socrata_class):
     mock_client = MagicMock()
     mock_socrata_class.return_value = mock_client
@@ -17,8 +17,8 @@ def test_datasets_generator_logic(mock_setup_logger, mock_socrata_class):
     # 3. verify the API response
     assert results == ["id_1", "id_2", "id_3"]
 
-@patch("decorators.Socrata")
-@patch("decorators.setup_logger")
+@patch("util.decorators.Socrata")
+@patch("util.decorators.setup_logger")
 def test_datasets_count(mock_setup_logger, mock_socrata_class):
     mock_client = MagicMock()
     mock_socrata_class.return_value = mock_client
@@ -30,8 +30,8 @@ def test_datasets_count(mock_setup_logger, mock_socrata_class):
 
     assert domain.city_datasets_count() == 3
     
-@patch("decorators.Socrata")
-@patch("decorators.setup_logger")
+@patch("util.decorators.Socrata")
+@patch("util.decorators.setup_logger")
 def test_city_datasets_ids(mock_setup_logger, mock_socrata_class):
     # Setup the mock to return nested dictionaries
     mock_client = MagicMock()
@@ -49,8 +49,8 @@ def test_city_datasets_ids(mock_setup_logger, mock_socrata_class):
     
     assert ids == ["abc-123", "def-456", "9mnw-mbde"]
 
-@patch("decorators.Socrata")
-@patch("decorators.setup_logger")
+@patch("util.decorators.Socrata")
+@patch("util.decorators.setup_logger")
 def test_dataset(mock_setup_logger, mock_socrata_class):
     mock_client = MagicMock()
     mock_socrata_class.return_value = mock_client
@@ -62,8 +62,8 @@ def test_dataset(mock_setup_logger, mock_socrata_class):
 
     assert len(data) == 1
 
-@patch("decorators.Socrata")
-@patch("decorators.setup_logger")
+@patch("util.decorators.Socrata")
+@patch("util.decorators.setup_logger")
 def test_metadata(mock_setup_logger, mock_socrata_class):
     mock_client = MagicMock()
     mock_socrata_class.return_value = mock_client
@@ -132,5 +132,5 @@ def cleanup_loggers():
     import logging
     logger_dict = logging.root.manager.loggerDict
     for name in list(logger_dict.keys()):
-        from utils import destroy_logger
+        from util.util import destroy_logger
         destroy_logger(name)

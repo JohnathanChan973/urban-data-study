@@ -1,11 +1,5 @@
 import json
-import pandas as pd
-from utils import setup_dir
-
-def load_to_df(dataset):
-    if not isinstance(dataset, list):
-        data = []
-    return pd.DataFrame.from_records(data)
+from util.util import setup_dir
 
 def write_domain_ids(domain, ids):
     path = setup_dir(domain)
