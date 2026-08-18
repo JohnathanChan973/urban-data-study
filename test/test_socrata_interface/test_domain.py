@@ -19,7 +19,7 @@ def test_datasets_generator_logic(mock_setup_logger, mock_socrata_class):
 
 @patch("util.decorators.Socrata")
 @patch("util.decorators.setup_logger")
-def test_datasets_count(mock_setup_logger, mock_socrata_class):
+def test_dataset_count(mock_setup_logger, mock_socrata_class):
     mock_client = MagicMock()
     mock_socrata_class.return_value = mock_client
     
@@ -28,11 +28,11 @@ def test_datasets_count(mock_setup_logger, mock_socrata_class):
     
     domain = Domain("test.org")
 
-    assert domain.city_datasets_count() == 3
+    assert domain.dataset_count() == 3
     
 @patch("util.decorators.Socrata")
 @patch("util.decorators.setup_logger")
-def test_city_datasets_ids(mock_setup_logger, mock_socrata_class):
+def test_datasets_ids(mock_setup_logger, mock_socrata_class):
     # Setup the mock to return nested dictionaries
     mock_client = MagicMock()
     mock_socrata_class.return_value = mock_client
@@ -45,7 +45,7 @@ def test_city_datasets_ids(mock_setup_logger, mock_socrata_class):
     ]
     
     domain = Domain("test.org")
-    ids = list(domain.city_datasets_ids())
+    ids = list(domain.dataset_ids())
     
     assert ids == ["abc-123", "def-456", "9mnw-mbde"]
 
@@ -109,7 +109,7 @@ def test_build_chunk_select_clause():
     quoted = f"`{TEST1}`"
     with patch.object(domain, "_quote_field_name", return_value = quoted):
         test1 = domain._build_chunk_select_clause(f"{TEST1}", "url")    
-    expected1 = f"(count(*) - count({quoted})) AS _{TEST2}_nulls, sum(CASE WHEN {quoted} IS NULL OR trim({quoted}) = '' THEN 1 ELSE 0 END) AS _{TEST2}_semantic_nulls"
+    expected1 = f"sum(CASE WHEN {quoted} IS NULL OR trim({quoted}) = '' THEN 1 ELSE 0 END) AS _{TEST2}_semantic_nulls"
     assert test1 == expected1
 
     with patch.object(domain, "_quote_field_name", return_value = TEST2):

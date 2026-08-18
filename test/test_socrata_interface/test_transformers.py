@@ -86,7 +86,8 @@ def test_extract_columns():
 def test_extract_schema():
     assert not trans.extract_schema(None)
     meta_schem = trans.extract_schema(METADATA)
-    assert len(meta_schem) == 1
+    assert len(meta_schem) == 2
+    assert meta_schem.get("attribute") == ["subject_injured"]
     data_schem = trans.extract_schema(DATA)
     assert meta_schem == data_schem
 
@@ -97,13 +98,8 @@ def test_extract_relevant_metadata():
     data_meta = trans.extract_relevant_metadata(DATA)
     assert meta_meta == data_meta
 
-# def test_tags_meta():
-#     t1 = ["a", "b", "c"]
-#     t2 = ["b", "c", "d"]
-#     counts = Counter()
-#     trans.tags_meta(counts, t1)
-#     assert len(counts) == 3
-#     trans.tags_meta(counts, t2)
-#     trans.tags_meta(counts, None)
-#     assert len(counts) == 4
-#     assert counts == Counter(["a", "b", "c", "b", "c", "d"])
+def test_extract_sparseness():
+    sparseness = trans.extract_sparseness({"row_count": "100"}, {"a": 0, "b": 50, "c": 100})
+    assert sparseness["table_sparseness"] == 50
+    sparseness = trans.extract_sparseness({"row_count": "0"}, {"a": 0, "b": 0, "c": 0})
+    assert sparseness["table+sparseness"] == 0 # Used to fail because of NaN due to divide by 0. Default to 0 since cannot be sparse without any rows

@@ -11,101 +11,73 @@ from pathlib import Path
 class All_Domain_Plotter:
     def __init__(self, all_domain):
         self.all_domain = all_domain
-        self.plots = self.all_domain.base / "plots"
+        # self.plots = self.all_domain.base / "plots"
 
-    def tagcloud(self, domain = None, log = True, w=800, h=400, max_words=100, save_name=None):
-        freqs = self.all_domain.base / f"aggregated_tag_counts.json"
-        if domain:
-            if domain in [d.domain for d in self.all_domain.all_domain]:
-                freqs = self.all_domain.parent_dir / domain / "metadata" / "summary" / "tag_counts.json"
-            else: return None
-        if not (freqs).exists():
-            return None
-        with (freqs).open() as f:
-            wc = WordCloud(width=w, height=h, max_words=max_words, background_color="white")
-            counts = json.load(f)
-            if log:
-                counts = {tag: math.log(count + 1) for tag, count in counts.items()}
-            SKIPPED_TAGS = ["tif", "kml", "kmz", "gis"]
-            filtered = {tag: count for tag, count in counts.items() if not any(bad in tag.lower() for bad in SKIPPED_TAGS)}
-            wc.generate_from_frequencies(filtered)
-            plt.imshow(wc, interpolation="bilinear")
-            plt.axis("off")
-            if save_name:
-                self._ensure_plots()
-                plt.savefig(self.plots / save_name, dpi=300, bbox_inches='tight')
-                print(f"Tag cloud saved to {self.plots / save_name}")
-            else:
-                plt.show()
-
-    def pop_count(self, save_name = None):
-        counts_df = pd.DataFrame.from_dict(self.all_domain.all_counts())
-        pops = self.all_domain.base / "city_pops.csv"
-        pops_df = pd.read_csv(pops)
-        merged_df = pd.merge(counts_df, pops_df, on='domain')
-        # ----- pick extremes -----
-        small_pop   = merged_df.nsmallest(3, "population")
-        large_pop   = merged_df.nlargest(3, "population")
-        small_count = merged_df.nsmallest(2, "count")
-        large_count = merged_df.nlargest(2, "count")
-        labeled_df = pd.concat([small_pop, large_pop, small_count, large_count]).drop_duplicates()
-        # ----- plot -----
-        ax = merged_df.plot(kind="scatter", x="population", y="count", logx=True, logy=True, figsize=(9,6))
-        texts = []
-        for _, row in labeled_df.iterrows():
-            texts.append(
-                ax.text(
-                    row["population"],
-                    row["count"],
-                    row["city"],
-                    fontsize=9,
-                    alpha=0.9
-                )
-            )
-        adjust_text(texts, ax=ax, only_move={"text": "y"})
-        # --- add trendline ---
-        x = merged_df["population"].values
-        y = merged_df["count"].values
-        logx = np.log10(x)
-        logy = np.log10(y)
-        b, a = np.polyfit(logx, logy, 1)
-        x_fit = np.linspace(x.min(), x.max(), 200)
-        y_fit = 10**(a + b * np.log10(x_fit))
-        ax.plot(x_fit, y_fit, linewidth=2, color="red", alpha = 0.5, linestyle='dotted')
-        plt.title('Number of Datasets vs Population', fontsize=16)
+    def tagcloud(self, summary, wc : WordCloud, log = True, save_name=None):
+        counts = summary.tags
+        SKIPPED_TAGS = ["tif", "kml", "kmz", "gis"]
+        filtered = {tag: count for tag, count in counts.items() if not any(bad in tag.lower() for bad in SKIPPED_TAGS)}
+        if log:
+            counts = {tag: math.log(count + 1) for tag, count in counts.items()}
+        wc.generate_from_frequencies(filtered)
+        plt.imshow(wc, interpolation="bilinear")
+        plt.axis("off")
         if save_name:
             self._ensure_plots()
             plt.savefig(self.plots / save_name, dpi=300, bbox_inches='tight')
-            print(f"Scatter plot saved to {self.plots / save_name}")
+            print(f"Tag cloud saved to {self.plots / save_name}")
         else:
             plt.show()
 
-    def plot_format_distribution(self, domain=None, save_name=None):
+    # def pop_count(self, save_name = None):
+    #     counts_df = pd.DataFrame.from_dict(self.all_domain.all_counts())
+    #     pops = self.all_domain.base / "city_pops.csv"
+    #     pops_df = pd.read_csv(pops)
+    #     merged_df = pd.merge(counts_df, pops_df, on='domain')
+    #     # ----- pick extremes -----
+    #     small_pop   = merged_df.nsmallest(3, "population")
+    #     large_pop   = merged_df.nlargest(3, "population")
+    #     small_count = merged_df.nsmallest(2, "count")
+    #     large_count = merged_df.nlargest(2, "count")
+    #     labeled_df = pd.concat([small_pop, large_pop, small_count, large_count]).drop_duplicates()
+    #     # ----- plot -----
+    #     ax = merged_df.plot(kind="scatter", x="population", y="count", logx=True, logy=True, figsize=(9,6))
+    #     texts = []
+    #     for _, row in labeled_df.iterrows():
+    #         texts.append(
+    #             ax.text(
+    #                 row["population"],
+    #                 row["count"],
+    #                 row["city"],
+    #                 fontsize=9,
+    #                 alpha=0.9
+    #             )
+    #         )
+    #     adjust_text(texts, ax=ax, only_move={"text": "y"})
+    #     # --- add trendline ---
+    #     x = merged_df["population"].values
+    #     y = merged_df["count"].values
+    #     logx = np.log10(x)
+    #     logy = np.log10(y)
+    #     b, a = np.polyfit(logx, logy, 1)
+    #     x_fit = np.linspace(x.min(), x.max(), 200)
+    #     y_fit = 10**(a + b * np.log10(x_fit))
+    #     ax.plot(x_fit, y_fit, linewidth=2, color="red", alpha = 0.5, linestyle='dotted')
+    #     plt.title('Number of Datasets vs Population', fontsize=16)
+    #     if save_name:
+    #         self._ensure_plots()
+    #         plt.savefig(self.plots / save_name, dpi=300, bbox_inches='tight')
+    #         print(f"Scatter plot saved to {self.plots / save_name}")
+    #     else:
+            plt.show()
+
+    def pie(self, summary, save_name=None):
         """
-        Create a pie chart showing the distribution of dataset formats across all or specific cities.
+        Create a pie chart of the selected attribute.
         
         Args:
             save_path: Optional path to save the figure. If None, displays interactively.
         """
-        # Load aggregated format data
-        formats_file = self.all_domain.base / "aggregated_formats.json"
-
-        if domain:
-            if domain in [d.domain for d in self.all_domain.all_domain]:
-                formats_file = self.all_domain.parent_dir / domain / "metadata" / "summary" / "formats.json"
-            else: return None
-        
-        if not formats_file.exists():
-            print("Formats not found. Run all_metadata_summaries() and aggregate_summaries() or summarize_metadata() on specific domain.")
-            return
-        
-        with open(formats_file) as f:
-            formats_data = json.load(f)
-        
-        if not formats_data:
-            print("No format data available.")
-            return
-        
         # Prepare data for pie chart
         labels = list(formats_data.keys())
         sizes = list(formats_data.values())
@@ -369,32 +341,32 @@ class All_Domain_Plotter:
         print(f"Table saved to {self.plots / 'City_Set_Count_And_Categories.html'}")
 
     def bar_graph(self, data, domain=None, save_name = None):
-        ACT = {
-            "attribute": ("aggregated_attribute_counts.json", "attribute_counts.json"),
-            "download": ("aggregated_download_counts.json", "download_buckets.json"), 
-            "view": ("aggregated_view_counts.json", "view_buckets.json"),
-            "sparseness": ("aggregated_sparseness_counts.json", "table_sparseness.json"),
-            "type": ("aggregated_column_types.json", "column_types.json")
-            }
-        file = ACT.get(data)
-        if not file:
-            print(f"{data} cannot be displayed with a bar graph.")
-            return
-        if domain:
-            if domain in [d.domain for d in self.all_domain.all_domain]:
-                path = self.all_domain.parent_dir / domain / "metadata" / "summary" / file[1]
-            else: return None
-        else:
-            path = self.all_domain.base / file[0]
-        if not path.exists():
-            print("Desired summary file not found. Run all_metadata_summaries() and aggregate_summaries() or summarize_metadata() on specific domain.")
-            return
-        if path.exists():
-            with open(path) as f:
-                counts = json.load(f)    
-        else:
-            print(f"{path} not found") 
-            return None              
+        # ACT = {
+        #     "attribute": ("aggregated_attribute_counts.json", "attribute_counts.json"),
+        #     "download": ("aggregated_download_counts.json", "download_buckets.json"), 
+        #     "view": ("aggregated_view_counts.json", "view_buckets.json"),
+        #     "sparseness": ("aggregated_sparseness_counts.json", "table_sparseness.json"),
+        #     "type": ("aggregated_column_types.json", "column_types.json")
+        #     }
+        # file = ACT.get(data)
+        # if not file:
+        #     print(f"{data} cannot be displayed with a bar graph.")
+        #     return
+        # if domain:
+        #     if domain in [d.domain for d in self.all_domain.all_domain]:
+        #         path = self.all_domain.parent_dir / domain / "metadata" / "summary" / file[1]
+        #     else: return None
+        # else:
+        #     path = self.all_domain.base / file[0]
+        # if not path.exists():
+        #     print("Desired summary file not found. Run all_metadata_summaries() and aggregate_summaries() or summarize_metadata() on specific domain.")
+        #     return
+        # if path.exists():
+        #     with open(path) as f:
+        #         counts = json.load(f)    
+        # else:
+        #     print(f"{path} not found") 
+        #     return None              
         caps = data.capitalize()
         series = pd.Series(counts)
         ax = series.plot(kind="bar", figsize=(9,6))
@@ -418,27 +390,27 @@ class All_Domain_Plotter:
         else:
             plt.show()
 
-    def line_graph(self, data, domain=None, save_name = None):
-        ACT = {
-            "publication": ("aggregated_publication_age.json", "publication_age.json"),
-            "update": ("aggregated_last_update.json", "last_update.json"), 
-            }
-        file = ACT.get(data)
-        if not file:
-            print(f"{data} cannot be displayed with a bar graph.")
-            return
-        if domain:
-            if domain in [d.domain for d in self.all_domain.all_domain]:
-                path = self.all_domain.parent_dir / domain / "metadata" / "summary" / file[1]
-            else: return None
-        else:
-            path = self.all_domain.base / file[0]
-        if path.exists():
-            with open(path) as f:
-                counts = json.load(f)
-        else:
-            print("Desired file not found. Run all_metadata_summaries() and aggregate_summaries() or summarize_metadata() on specific domain.")
-            return None           
+    def line_graph(self, summary, data, save_name = None):
+        # ACT = {
+        #     "publication": ("aggregated_publication_age.json", "publication_age.json"),
+        #     "update": ("aggregated_last_update.json", "last_update.json"), 
+        #     }
+        # file = ACT.get(data)
+        # if not file:
+        #     print(f"{data} cannot be displayed with a bar graph.")
+        #     return
+        # if domain:
+        #     if domain in [d.domain for d in self.all_domain.all_domain]:
+        #         path = self.all_domain.parent_dir / domain / "metadata" / "summary" / file[1]
+        #     else: return None
+        # else:
+        #     path = self.all_domain.base / file[0]
+        # if path.exists():
+        #     with open(path) as f:
+        #         counts = json.load(f)
+        # else:
+        #     print("Desired file not found. Run all_metadata_summaries() and aggregate_summaries() or summarize_metadata() on specific domain.")
+        #     return None           
         # Prepare data
         series = pd.Series(counts)
         series.index = series.index.astype(int)

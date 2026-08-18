@@ -13,6 +13,7 @@ def setup_dir(domain, name=None):
         newdir = (domaindir / name)
         newdir.mkdir(exist_ok=True)
         return newdir
+    return domaindir
 
 def setup_logger(domain):
     """

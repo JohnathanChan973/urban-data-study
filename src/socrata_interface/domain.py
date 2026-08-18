@@ -1,4 +1,4 @@
-from util.decorators import setup
+from util.decorators import setup, handler
 
 class Domain:    
     def __init__(self, domain, token=None, timeout=15):
@@ -25,11 +25,13 @@ class Domain:
         # Manual cleanup after the loop finishes
         del data 
 
-    def city_datasets_count(self):
+    @handler()
+    def dataset_count(self):
         # Counts using the generator
         return sum(1 for _ in self.datasets_generator())
-        
-    def city_datasets_ids(self):
+
+    @handler()
+    def dataset_ids(self):
         return map(lambda x: x.get("resource", {}).get("id"), self.datasets_generator())
 
     @setup()
@@ -44,10 +46,12 @@ class Domain:
     def select(self, id, query):
         return self.client.get(id, select=query)
 
+    @handler()
     def row_counts(self, id):
-        return self.select(id, "count(*)")
-    
-    def null_counts(self, id, cols):
+        return self.select(id, "count(*) AS row_count")[0]
+
+    @handler()
+    def null_counts(self, id, schema):
         """
         Docstring for null_counts
         
@@ -55,24 +59,24 @@ class Domain:
         :param id: id of the desired dataset
         :param cols: columns object from metadata of the same id
         """
-        usable_cols = []
-        SKIP_TYPES = {"point", "location", "polygon", "multipolygon", "line", "multiline", "multipoint"} # These types break queries (1NF violation)
-        for col in cols:
-            field = col.get("fieldName", "")
-            dtype = col.get("dataTypeName", "")
+        if len(schema) != 2:
+            ValueError("Use the extract_schema method from transformers for the columns")
 
+        usable_cols = []
+        SKIP_TYPES = {"point", "location", "polygon", "multipolygon", "line", "multiline", "multipoint", "url"} # These types break queries (1NF violation)
+        fields = schema.get("attribute", "")
+        dtypes = schema.get("col_type", "")
+        for field, dtype in zip(fields, dtypes):
             if dtype in SKIP_TYPES:
-                self.log.debug(f"{id}: Skipping geometry column '{field}' (type: {dtype})")
                 continue
             else:
                 usable_cols.append(self._build_chunk_select_clause(field, dtype))
         
         if not usable_cols:
-            self.log.warning(f"{id}: No queryable columns found")
             return []
         
         select_clause = ', '.join(usable_cols)
-        return self.select(id, select_clause)
+        return self.select(id, select_clause)[0]
 
     def _build_chunk_select_clause(self, field, dtype):
         """
@@ -82,11 +86,6 @@ class Domain:
 
         quoted_field = self._quote_field_name(field)
         safe_alias = field.replace(":", "_").replace("@", "_").replace("-", "_")
-        
-        # null count
-        select_parts.append(
-            f"(count(*) - count({quoted_field})) AS {safe_alias}_nulls"
-        )
         
         # Simplified semantic nulls for text fields only
         TEXT_LIKE_TYPES = {"text", "url", "email", "phone", "html"}
@@ -99,6 +98,11 @@ class Domain:
                 f"THEN 1 ELSE 0 END) AS {safe_alias}_semantic_nulls"
             )
             select_parts.append(semantic)
+        else:
+            # null count
+            select_parts.append(
+                f"(count(*) - count({quoted_field})) AS {safe_alias}_nulls"
+            )
         
         return ", ".join(select_parts)
 
@@ -111,4 +115,9 @@ class Domain:
             escaped = field.replace('`', '``')
             return f"`{escaped}`"
         return field
-    
+
+    def __str__(self):
+        return f'{self.domain.split(".")[1]}'
+
+    def __repr__(self):
+        return f'Domain({self.domain}, {self.token}, {self.timeout}, {self.client}, {self.log})'

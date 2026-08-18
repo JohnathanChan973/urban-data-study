@@ -1,6 +1,5 @@
 import pandas as pd
-from collections import Counter
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 def load_to_df(dataset):
     if not isinstance(dataset, list):
@@ -23,16 +22,16 @@ def extract_schema(metadata):
             field_name = resource.get("columns_field_name")
             datatype = resource.get("columns_datatype")
             if field_name and datatype:
-                return [{
-                        "name": f, 
-                        "type": d.lower(),
-                        } for f, d in zip(field_name, datatype)]
-        cols = metadata.get("columns", None)
-        if cols:
-            return [{
-                    "name": c.get("fieldName"), 
-                    "type": c.get("dataTypeName"),
-                    } for c in cols]    
+                return {"attribute": field_name, "col_type": list(map(str.lower, datatype))} 
+        else:
+            cols = metadata.get("columns", None)
+            if cols:
+                att_list = []
+                col_t_list = []
+                for c in cols:
+                    att_list.append(c.get("fieldName", None))
+                    col_t_list.append(c.get("dataTypeName", None))
+                return {'attribute': att_list, 'col_type': col_t_list}
     return None
 
 def extract_relevant_metadata(metadata):
@@ -41,222 +40,42 @@ def extract_relevant_metadata(metadata):
         if resource:
             classification = metadata.get("classification")
             return {
-                "category": classification.get("domain_category"),
-                "format": resource.get("lens_view_type"),
-                "tags": classification.get("domain_tags"),
-                "downloadCount": resource.get("download_count"),
-                "viewCount": resource.get("page_views").get("page_views_total"),
-                "createdAt": datetime.fromisoformat(resource.get("createdAt").replace('Z', '+00:00')),
-                "publicationDate": datetime.fromisoformat(resource.get("publication_date").replace('Z', '+00:00')),
-                "updatedAt": datetime.fromisoformat(resource.get("updatedAt").replace('Z', '+00:00'))
+                "asset_type": resource.get("type"),
+                "category": classification.get("domain_category"), # string
+                "display": resource.get("lens_display_type"), # string
+                "download_count": resource.get("download_count"), # int
+                "last_update": resource.get("updatedAt").replace('.000Z', '+00:00'), # string
+                "publication_date": resource.get("publication_date").replace('.000Z', '+00:00'),
+                "tags": classification.get("domain_tags"), # list of strings 
+                "view_count": resource.get("page_views").get("page_views_total") # int
                 }
         else:
             return {
+                "asset_type": metadata.get("assetType"),
                 "category": metadata.get("category"),
-                "format": metadata.get("viewType"),
+                "display": metadata.get("displayType"),
+                "download_count": metadata.get("downloadCount"),
+                "last_update": datetime.fromtimestamp(metadata.get("rowsUpdatedAt"), UTC).isoformat(),
+                "publication_date": datetime.fromtimestamp(metadata.get("publicationDate"), UTC).isoformat(), # str (.isoformat() makes it a string)
                 "tags": metadata.get("tags"),
-                "downloadCount": metadata.get("downloadCount"),
-                "viewCount": metadata.get("viewCount"),
-                "createdAt": datetime.fromtimestamp(metadata.get("createdAt"), tz=timezone.utc),
-                "publicationDate": datetime.fromtimestamp(metadata.get("publicationDate"), tz=timezone.utc),
-                "updatedAt": datetime.fromtimestamp(metadata.get("rowsUpdatedAt"), tz=timezone.utc)
+                "view_count": metadata.get("viewCount")
                 }
     return None
 
-# def tags_meta(tag_counts : Counter, tags):
-#     tag_counts.update(tags)
+def extract_sparseness(row_counts, null_counts):
+    """
+    :param row_counts: Expected to be the row_counts() function from domain
+    :param null_counts: Expected to be the null_counts() function from domain
+    """
+    total_rows = int(row_counts.get("row_count"))
+    if total_rows == 0:
+        return {"table_sparseness": 0}
+    null_series = pd.Series(null_counts).astype(int)
+    null_percents = null_series / total_rows * 100
+    return {"table_sparseness": null_percents.mean()}
 
-def summarize_metadata(self):
-    df = pd.DataFrame(metadata_list)
-    
-    # Tag Analysis
-    tags = df['tags'].explode()
-    tag_counts = tags.value_counts().reset_index()
-    tag_counts.columns = ['tag', 'count']
-    # tag_counts.to_json(outpath / "tag_counts.json", orient='records', indent=2)
-    tag_dct = dict(zip(tag_counts["tag"], tag_counts["count"]))
-    with open(outpath / "tag_counts.json", "w") as f:
-        json.dump(tag_dct, f, indent=2)
-    
-    # Row Count Buckets
-    df['row_bucket'] = pd.cut(
-        df['rowCount'],
-        bins=[0, 1000, 10000, 100000, 1000000, 10000000, float('inf')],
-        labels=['0-1K', '1K-10K', '10K-100K', '100K-1M', '1M-10M', '10M+'],
-        right=False
-    )
-    bucket_counts = df['row_bucket'].value_counts().reset_index()
-    bucket_counts.columns = ['bucket', 'count']
-    bucket_counts = bucket_counts.sort_values('bucket')
-    # bucket_counts.to_json(outpath / "row_buckets.json", orient='records', indent=2)
-    row_dct = dict(zip(bucket_counts["bucket"], bucket_counts["count"]))
-    with open(outpath / "row_buckets.json", "w") as f:
-        json.dump(row_dct, f, indent=2)
-    
-    # View Count Buckets
-    df['view_bucket'] = pd.cut(
-        df['viewCount'],
-        bins=[0, 100, 1000, 10000, float('inf')],
-        labels=['0-100', '100-1K', '1K-10K', '10K+'],
-        right=False
-    )
-    view_bucket_counts = df['view_bucket'].value_counts().reset_index()
-    view_bucket_counts.columns = ['bucket', 'count']
-    view_bucket_counts = view_bucket_counts.sort_values('bucket')
-    # view_bucket_counts.to_json(outpath / "view_buckets.json", orient='records', indent=2)
-    view_dct = dict(zip(view_bucket_counts["bucket"], view_bucket_counts["count"]))
-    with open(outpath / "view_buckets.json", "w") as f:
-        json.dump(view_dct, f, indent=2)
-
-    # Download Count Buckets
-    df['download_bucket'] = pd.cut(
-        df['downloadCount'],
-        bins=[0, 100, 1000, 10000, float('inf')],
-        labels=['0-100', '100-1K', '1K-10K', '10K+'],
-        right=False
-    )
-    download_bucket_counts = df['download_bucket'].value_counts().reset_index()
-    download_bucket_counts.columns = ['bucket', 'count']
-    download_bucket_counts = download_bucket_counts.sort_values('bucket')
-    # download_bucket_counts.to_json(outpath / "download_buckets.json", orient='records', indent=2)
-    download_dct = dict(zip(download_bucket_counts["bucket"], download_bucket_counts["count"]))
-    with open(outpath / "download_buckets.json", "w") as f:
-        json.dump(download_dct, f, indent=2)
-    
-    # Category distribution
-    category_counts = df['category'].value_counts().reset_index()
-    category_counts.columns = ['category', 'count']
-    # category_counts.to_json(outpath / "categories.json", orient='records', indent=2)
-    category_dct = dict(zip(category_counts["category"], category_counts["count"]))
-    with open(outpath / "categories.json", "w") as f:
-        json.dump(category_dct, f, indent=2)
-    
-    # Format distribution
-    format_counts = df['format'].value_counts().reset_index()
-    format_counts.columns = ['format', 'count']
-    # format_counts.to_json(outpath / "formats.json", orient='records', indent=2)
-    format_dct = dict(zip(format_counts["format"], format_counts["count"]))
-    with open(outpath / "formats.json", "w") as f:
-        json.dump(format_dct, f, indent=2)
-    
-    # Age of publication in months
-    current_time = datetime.now().timestamp()
-
-    # Handle missing publicationDate values
-    df['age_months'] = ((current_time - df['publicationDate']) / (30.44 * 24 * 3600))
-    df['age_months'] = df['age_months'].fillna(-1).astype(int)
-
-    # Create counts
-    age_counts = df[df['age_months'] >= 0]['age_months'].value_counts()
-
-    # Fill in missing months with 0
-    if len(age_counts) > 0:
-        max_age = age_counts.index.max()
-        min_age = age_counts.index.min()
-        
-        # Create complete range
-        full_range = pd.Series(0, index=range(min_age, max_age + 1))
-        
-        # Update with actual counts
-        full_range.update(age_counts)
-        
-        # Convert to dict
-        age_dct = full_range.to_dict()
-    else:
-        age_dct = {}
-
-    with open(outpath / "publication_age.json", "w") as f:
-        json.dump(age_dct, f, indent=2)
-
-    # Months since last update
-    df['months_since_update'] = ((current_time - df['updatedAt']) / (30.44 * 24 * 3600))
-    # Fill NaN values before converting to int
-    df['months_since_update'] = df['months_since_update'].fillna(-1).astype(int)
-
-    # Now create the counts, optionally filtering out invalid ages
-    update_counts = df[df['months_since_update'] >= 0]['months_since_update'].value_counts()
-    # Fill in missing months with 0
-    if len(update_counts) > 0:
-        max_update = update_counts.index.max()
-        min_update = update_counts.index.min()
-        # Create complete range
-        update_range = pd.Series(0, index=range(min_update, max_update + 1))
-        # Update with actual counts
-        update_range.update(update_counts)
-        # Convert to dict
-        update_dct = update_range.to_dict()
-    else:
-        update_dct = {}
-
-    with open(outpath / "last_update.json", "w") as f:
-        json.dump(update_dct, f, indent=2)
-
-    # Number of attributes (columns) per dataset
-    # Handle missing columns (NaN values)
-    df['num_attributes'] = df['columns'].apply(lambda x: len(x) if isinstance(x, list) else 0)
-
-    df['attr_bucket'] = pd.cut(
-        df['num_attributes'],
-        bins=[0, 10, 20, 30, 40, 50, float('inf')],
-        labels=['0-10', '10-20', '20-30', '30-40', '40-50', '50+'],
-        right=False
-    )
-    attr_counts = df['attr_bucket'].value_counts().reset_index()
-    attr_counts.columns = ['attribute_bucket', 'count']
-    attr_counts = attr_counts.sort_values('attribute_bucket')
-    # attr_counts.to_json(outpath / "attribute_counts.json", orient='records', indent=2)
-    attr_dct = dict(zip(attr_counts["attribute_bucket"], attr_counts["count"]))
-    with open(outpath / "attribute_counts.json", "w") as f:
-        json.dump(attr_dct, f, indent=2)
-    
-    # Types of attributes (distribution of column types)
-    all_column_types = []
-    for columns_list in df['columns']:
-        # Skip if columns is NaN (float)
-        if isinstance(columns_list, list):
-            for col in columns_list:
-                all_column_types.append(col['type'])
-
-    type_counts = pd.Series(all_column_types).value_counts().reset_index()
-    type_counts.columns = ['type', 'count']
-    # type_counts.to_json(outpath / "column_types.json", orient='records', indent=2)
-    type_dct = dict(zip(type_counts["type"], type_counts["count"]))
-    with open(outpath / "column_types.json", "w") as f:
-        json.dump(type_dct, f, indent=2)
-    
-    # Table sparseness (percentage of semantic_nulls across all columns)
-    sparseness_data = []
-    for idx, row in df.iterrows():
-        row_count = row['rowCount']
-        columns_list = row['columns']
-        
-        # Skip if columns is NaN or rowCount is invalid
-        if isinstance(columns_list, list) and row_count > 0:
-            null_percentages = []
-            for col in columns_list:
-                null_pct = (col['semantic_nulls'] / row_count * 100)
-                null_percentages.append(null_pct)
-            
-            if null_percentages:
-                avg_sparseness = sum(null_percentages) / len(null_percentages)
-                sparseness_data.append(avg_sparseness)
-
-    if sparseness_data:  # Only create analysis if we have data
-        sparseness_df = pd.DataFrame({'avg_sparseness': sparseness_data})
-        sparseness_df['sparseness_bucket'] = pd.cut(
-            sparseness_df['avg_sparseness'],
-            bins=[0, 1, 5, 10, 25, 50, 100],
-            labels=['< 1% sparse', '1-5% sparse', '5-10% sparse', '10-25% sparse', '25-50% sparse', '50%+ sparse'],
-            right=False
-        )
-        
-        sparseness_counts = sparseness_df['sparseness_bucket'].value_counts().reset_index()
-        sparseness_counts.columns = ['sparseness_bucket', 'count']
-        sparseness_counts = sparseness_counts.sort_values('sparseness_bucket')
-        # sparseness_counts.to_json(outpath / "table_sparseness.json", orient='records', indent=2)
-        sparseness_dct = dict(zip(sparseness_counts["sparseness_bucket"], sparseness_counts["count"]))
-        with open(outpath / "table_sparseness.json", "w") as f:
-            json.dump(sparseness_dct, f, indent=2)
-    else:
-        print("No sparseness data available")
-    
+def aggregate_tabular_metadata(schema, row_counts, sparseness):
+    tabular_summary = row_counts.copy()
+    tabular_summary.update(sparseness)
+    tabular_summary.update(schema)
+    return tabular_summary
