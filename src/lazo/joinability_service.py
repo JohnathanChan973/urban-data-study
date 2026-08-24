@@ -1,13 +1,8 @@
-from dataclasses import dataclass
 from typing import Optional, List
 from datasketch import MinHashLSHEnsemble
 from models.column_sketch import ColumnSketch
 from models.dataset_sketch import DatasetSketch
-
-@dataclass
-class JoinCandidate:
-    target_dataset_id: str
-    target_column_name: str
+from models.join_candidate import JoinCandidate
 
 class JoinabilityService:
     def __init__(self, containment_threshold: float = 0.7, num_part: int = 32):
