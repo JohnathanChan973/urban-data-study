@@ -1,6 +1,6 @@
 import socrata_interface.transformers as trans
 import pandas as pd
-from collections import Counter
+from pytest import raises
 
 DATA = {'resource': {'name': 'NOPD Use of Force Incidents',
    'id': '9mnw-mbde',
@@ -72,34 +72,32 @@ def test_load_to_df():
     assert not df.empty
     assert len(df.columns) ==  10
 
-def test_extract_columns():
-    df = pd.DataFrame({"speed": [12, 13, 14], "car": ["honda", "toyota", "lexus"]})
-    dct = trans.extract_columns(1, df)
-    assert dct
-    assert len(dct) == 2
-    for k, v in dct.items():
-        assert isinstance(k, tuple)
-        assert len(k) == 2
-        assert isinstance(v, pd.Series)
-        assert len(v) == 3
-
 def test_extract_schema():
-    assert not trans.extract_schema(None)
+    with raises(ValueError):
+        trans.extract_schema(None)
     meta_schem = trans.extract_schema(METADATA)
     assert len(meta_schem) == 2
     assert meta_schem.get("attribute") == ["subject_injured"]
     data_schem = trans.extract_schema(DATA)
     assert meta_schem == data_schem
 
+def test_extract_joinable_columns():
+    schema = {"attribute": ["name", "score", "link"], "col_type": ["text", "number", "url"]}
+    cols = trans.extract_joinable_columns(schema)
+    assert len(cols) == 2
+    assert len(cols.get("text")) == 1
+    assert len(cols.get("number")) == 1
+
 def test_extract_relevant_metadata():
-    assert not trans.extract_relevant_metadata(None)
+    with raises(ValueError):
+        trans.extract_relevant_metadata(None)
     meta_meta = trans.extract_relevant_metadata(METADATA)
     assert len(meta_meta) == 8
     data_meta = trans.extract_relevant_metadata(DATA)
     assert meta_meta == data_meta
 
 def test_extract_sparseness():
-    sparseness = trans.extract_sparseness({"row_count": "100"}, {"a": 0, "b": 50, "c": 100})
+    sparseness = trans.extract_sparseness({"row_count": 100}, {"a": 0, "b": 50, "c": 100})
     assert sparseness["table_sparseness"] == 50
-    sparseness = trans.extract_sparseness({"row_count": "0"}, {"a": 0, "b": 0, "c": 0})
-    assert sparseness["table+sparseness"] == 0 # Used to fail because of NaN due to divide by 0. Default to 0 since cannot be sparse without any rows
+    sparseness = trans.extract_sparseness({"row_count": 0}, {"a": 0, "b": 0, "c": 0})
+    assert sparseness["table_sparseness"] == 0 # Used to fail because of NaN due to divide by 0. Default to 0 since cannot be sparse without any rows

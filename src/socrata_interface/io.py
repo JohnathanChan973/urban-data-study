@@ -21,7 +21,7 @@ def write_data(domain, id, type_of, data):
     if not data:
         return None
     outfile = f"{id}_{type_of}.json"
-    output_dir = setup_dir(domain, f"{type_of}s")
+    output_dir = setup_dir(domain, f"{type_of}")
     outpath = output_dir / outfile
     if isinstance(data, list):
         outpath.write_bytes(data)

@@ -47,11 +47,13 @@ class Domain:
         return self.client.get(id, select=query)
 
     @handler()
-    def row_counts(self, id):
-        return self.select(id, "count(*) AS row_count")[0]
+    def row_count(self, id):
+        result = self.select(id, "count(*) AS row_count")[0] # should be {"row_count": "int"}
+        result["row_count"] = int(result["row_count"])
+        return result
 
     @handler()
-    def null_counts(self, id, schema):
+    def null_count(self, id, schema):
         """
         Docstring for null_counts
         

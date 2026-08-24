@@ -44,7 +44,7 @@ class DataSummary:
     view_count: Counter = field(default_factory=Counter)
     
     attribute: Counter = field(default_factory=Counter)
-    col_types: Counter = field(default_factory=Counter)
+    col_type: Counter = field(default_factory=Counter)
     row_count: Counter = field(default_factory=Counter)
     table_sparseness: Counter = field(default_factory=Counter)
 
