@@ -3,7 +3,7 @@ import requests
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from socrata_interface.all_domain import All_Domain
-from socrata_interface.plotter import All_Domain_Plotter
+from visualizers.plotter import All_Domain_Plotter
 import pandas as pd
 
 # with ThreadPoolExecutor(max_workers=10) as ex:

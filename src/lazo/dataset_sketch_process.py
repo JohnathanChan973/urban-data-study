@@ -12,7 +12,6 @@ def _is_continuous_float(val: str | int | float) -> bool:
         return False
 
 class DatasetSketchProcessor:
-
     @staticmethod
     def process_generator(
         dataset_id: str,
