@@ -26,7 +26,7 @@ def extract_schema(metadata):
                 col_t_list.append(c.get("dataTypeName", None))
             return {'attribute': att_list, 'col_type': col_t_list}
 
-def extract_joinable_columns(schema) -> List[str]:
+def extract_joinable_columns(schema) -> dict[str, set]:
     if not schema:
         raise ValueError
     name = schema.get('attribute')

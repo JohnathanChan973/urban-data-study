@@ -3,5 +3,5 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "socrata_project"
+name = "big_data_project"
 version = "0.1.0"
