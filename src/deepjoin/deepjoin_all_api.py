@@ -19,76 +19,76 @@ TOP_K = 50             # final top joins
 DATASET_BATCH = 10     # dataset batch size
 CHECKPOINT_FILE = "deepjoin_checkpoint.json"
 
-def get_all_datasets():
-    client = Socrata(NYC_DOMAIN, None)
-    datasets = client.datasets()
-    ids = [d["resource"]["id"] for d in datasets]
-    return ids[:MAX_DATASETS] if MAX_DATASETS else ids
+# def get_all_datasets(): Irrelevant due to dataset_id func in domain
+#     client = Socrata(NYC_DOMAIN, None)
+#     datasets = client.datasets()
+#     ids = [d["resource"]["id"] for d in datasets]
+#     return ids[:MAX_DATASETS] if MAX_DATASETS else ids
 
-def get_columns_for(dataset_id):
-    url = f"https://{NYC_DOMAIN}/api/views/{dataset_id}.json"
-    try:
-        r = requests.get(url, timeout=10)
-        if r.status_code != 200:
-            return []
-        meta = r.json()
-        cols = meta.get("columns", [])
-        return [c.get("fieldName") for c in cols if c.get("fieldName")]
-    except:
-        return []
+# def get_columns_for(dataset_id): Irrelevant due to get_schema in transformers
+#     url = f"https://{NYC_DOMAIN}/api/views/{dataset_id}.json"
+#     try:
+#         r = requests.get(url, timeout=10)
+#         if r.status_code != 200:
+#             return []
+#         meta = r.json()
+#         cols = meta.get("columns", [])
+#         return [c.get("fieldName") for c in cols if c.get("fieldName")]
+#     except:
+#         return []
 
-def sample_column(args):
-    dataset_id, column = args
-    vals = sample_from_api(dataset_id, column, LIMIT)
-    return (column, vals)
+# def sample_column(args): Takes a the first 20 rows of the dataset 
+#     dataset_id, column = args
+#     vals = sample_from_api(dataset_id, column, LIMIT)
+#     return (column, vals)
 
-def sample_dataset_columns(dataset_id):
-    cols = get_columns_for(dataset_id)
-    if not cols:
-        return {}
+# def sample_dataset_columns(dataset_id): Returns dict of first 20 rows of each column in the set (Why does it go through each column individually just to batch them in the end anyways)
+#     cols = get_columns_for(dataset_id)
+#     if not cols:
+#         return {}
 
-    samples = {}
-    tasks = [(dataset_id, c) for c in cols]
+#     samples = {}
+#     tasks = [(dataset_id, c) for c in cols]
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=32) as executor:
-        for col, vals in executor.map(sample_column, tasks):
-            samples[col] = vals
+#     with concurrent.futures.ThreadPoolExecutor(max_workers=32) as executor:
+#         for col, vals in executor.map(sample_column, tasks):
+#             samples[col] = vals
 
-    return samples
+#     return samples
 
-def embed_dataset(dataset_id, samples):
-    embeddings = {}
-    for col, vals in samples.items():
-        text = build_column_text(f"{dataset_id}.{col}", vals)
-        vec = embed(text)
-        embeddings[col] = vec
-    return embeddings
+# def embed_dataset(dataset_id, samples): Creates embeddings
+#     embeddings = {}
+#     for col, vals in samples.items():
+#         text = build_column_text(f"{dataset_id}.{col}", vals)
+#         vec = embed(text)
+#         embeddings[col] = vec
+#     return embeddings
 
-def save_checkpoint(data):
-    safe = {}
+# def save_checkpoint(data): Checkpoint system in case of failing
+#     safe = {}
 
-    for ds, cols in data.items():
-        safe[ds] = {}
-        for c, v in cols.items():
-            safe[ds][c] = v.tolist()
+#     for ds, cols in data.items():
+#         safe[ds] = {}
+#         for c, v in cols.items():
+#             safe[ds][c] = v.tolist()
 
-    with open(CHECKPOINT_FILE, "w") as f:
-        json.dump(safe, f)
+#     with open(CHECKPOINT_FILE, "w") as f:
+#         json.dump(safe, f)
 
-def load_checkpoint():
-    if not os.path.exists(CHECKPOINT_FILE):
-        return {}
+# def load_checkpoint():
+#     if not os.path.exists(CHECKPOINT_FILE):
+#         return {}
 
-    with open(CHECKPOINT_FILE, "r") as f:
-        raw = json.load(f)
+#     with open(CHECKPOINT_FILE, "r") as f:
+#         raw = json.load(f)
 
-    restored = {}
-    for ds, cols in raw.items():
-        restored[ds] = {}
-        for c, v in cols.items():
-            restored[ds][c] = np.array(v)
+#     restored = {}
+#     for ds, cols in raw.items():
+#         restored[ds] = {}
+#         for c, v in cols.items():
+#             restored[ds][c] = np.array(v)
 
-    return restored
+#     return restored
 
 def compute_join_scores_safe(dataset_embeddings):
     print("\n[Computing Join Scores — SAFE BLOCK MODE]\n")
