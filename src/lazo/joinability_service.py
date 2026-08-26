@@ -12,7 +12,7 @@ class JoinabilityService:
             threshold=containment_threshold, num_part=num_part
         )
         self._staged_records = []
-        self._registered_datasets = {}
+        self._registered_datasets = set()
 
     def stage_column(
         self,
@@ -28,10 +28,13 @@ class JoinabilityService:
 
     def stage_dataset(self, dataset_sketch: DatasetSketch) -> None:
         """Stage all columns inside a DatasetSketch."""
+        if dataset_sketch.dataset_id in self._registered_datasets:
+            raise ValueError("This dataset has already been registered.")
         for col_sketch in dataset_sketch.column_sketches.values():
             self.stage_column(
                 col_sketch=col_sketch, dataset_id=dataset_sketch.dataset_id
             )
+        self._registered_datasets.add(dataset_sketch.dataset_id)
 
     def build_index(self) -> None:
         """Indexes all accumulated dataset sketches."""
@@ -59,7 +62,7 @@ class JoinabilityService:
 
         # Query the ensemble with (MinHash, size)
         raw_matches = self.ensemble.query(
-            (query_sketch.minhash, query_size), query_size
+            query_sketch.minhash, query_size
         )
 
         candidates = []
