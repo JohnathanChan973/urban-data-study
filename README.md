@@ -1,28 +1,41 @@
 # Big Data Final Project - NYC Open Data Joinability
 
-This repo explores the NYC Open Data (Socrata) catalog and builds a LAZO-based joinability graph across datasets. It downloads raw JSON for each dataset, sketches every column with MinHash + HyperLogLog-style cardinality, estimates Jaccard/containment via LAZO, and exports report-ready CSV/plots (with optional interactive graph).
+This repo explores the NYC Open Data (Socrata) catalog and joinability across datasets via LAZO and DeepJoin perspectives.
 
-## Repository Layout
-- `domain.py` — Socrata helper (per-domain folders, download JSON, fetch schemas, logging).
-- `all_domain.py` - performs functions from `domain.py` across all domains.
-- `plotter.py` - creates graphs based off of metadata gotten using `domain.py`.
-- `downloader.ipnb` - notebook that when run in order will download all relevant metadata from all domains.
-- `graphics.ipynb` - notebook that allows for simple use of `plotter.py`.
+## Repository Layout (BEING REFACTORED)
+- `models`
+  - `column_sketch.py` - dataclass used for sketching columns.
+  - `data_summary.py` - dataclass used for summarizing metadata of ingested datasets.
+  - `dataset_sketch.py` - dataclass used for sketching columns of a dataset.
+  - `join_candidate.py` - dataclass used for candidates of joinable columns.
+  - `reservoir_sampler.py` - model used to properly sample data from a stream.
+- `socrata_interface`
+  - `domain.py` - Socrata wrapper.
+  - `io.py` - basic input output functions.
+  - `transformers.py` - functions used to manipulate raw data from `domain.py` into more usable forms by models.
+- `lazo`
+  - `dataset_sketch_process.py` - process used to create dataset sketches.
+  - `joinability_service.py` - uses datasketch library to enable quick and succinct calculations of Jaccard Similarity using MinHashing
+- `deepjoin`
+  - `deepjoin_service.py` - mimics the deepjoin strategy for discovering joinability by embedding columns and finding near by columns spatially.
+- `util`
+  - `decorators.py` - decorators used for retry logic and logging.
+  - `util.py` - utility functions to create directories and loggers.
+- `visualize` (WIP)
+  - `deepjoin_barchart.py`
+  - `deepjoin_visualize.py`
+  - `join_graph.py` - builds dataset-level graph (also offers pyvis HTML export if needed).
+  - `plotter.py` - creates graphs based off of metadata gotten using `domain.py`. 
+  - `run_join_graph.py` - end-to-end: load sketches, compute joinability, export CSV + static charts. (WIP)
+  - `visualize_joinability.py` - visualizes joinability based on results. (WIP)
+- `downloader.ipnb` - notebook that is currently being used as a testing ground.
+- `graphics.ipynb` - notebook that allows for simple use of `plotter.py`. (WIP)
 - `city_pops.csv` - csv containing population data and city names for domains to be used by `graphics.ipynb`.
-- `download_nyc_all.py` — incremental NYC downloader (uses `Domain`), polite rate limiting.
-- `build_sketches_all.py` — extract columns from downloaded JSON and build sketches for each column.
-- `joinability_pipeline.py` — LAZO pairwise JS/containment over column sketches.
-- `join_graph.py` — builds dataset-level graph (also offers pyvis HTML export if needed).
-- `run_join_graph.py` — end-to-end: load sketches, compute joinability, export CSV + static charts.
-- `run_joinability_example.py` — small demo over a sampled subset of columns.
-- `column_extraction.py` — JSON ➜ pandas DataFrames ➜ (dataset, column) → Series dict (string/number cols only).
-- `lazo_sketch.py` — ColumnSketch dataclass, MinHash (K=128), lightweight HLL-style cardinality.
-- `lazo_estimator.py` — LAZO JS/JC estimation with error-correction heuristic.
-- `datasets.ipynb` — early exploration: Socrata API usage, domain crawling, domain filtering.
-- `socrata_domains.txt` / `socrata_domains_cities_only.txt` — discovered Socrata portals, filtered to city portals.
-- Outputs (generated): `all_city_data/`, `data.cityofnewyork.us/data/*.json`, `nyc_column_sketches.pkl`, `nyc_joinability_pairs.csv`, `reports/*.png`, and (optionally) `nyc_join_graph.html`.
+- `find_domains.ipynb` — notebook using the Socrata API for domain crawling, domain filtering.
+- `socrata_domains.txt` / `socrata_domains_cities_only.txt` - discovered Socrata portals, filtered to city portals.
+- Outputs (generated): `data/`, `logs/`, `reports/`.
 
-## Setup
+## Setup (WIP)
 ```bash
 python -m venv .venv
 source .venv/bin/activate
@@ -30,43 +43,11 @@ pip install -r requirements.txt
 ```
 Tokens (optional but recommended to avoid throttling): set `SODAPY_APPTOKEN` or per-domain creds in your shell env before running scripts.
 
-## Workflow
-1) **Download NYC datasets (raw JSON)**  
-   ```bash
-   python3 download_nyc_all.py
-   ```  
-   - Creates `data.cityofnewyork.us/data/data_<dataset_id>.json`.  
-   - Script skips files already present; adjust `max_per_run` to throttle volume; sleeps between requests to be polite.
+## Workflow (BEING REFACTORED)
 
-2) **Build column sketches**  
-   ```bash
-   python3 build_sketches_all.py
-   ```  
-   - Loads all JSONs, keeps string/number columns, drops columns with <50 non-null rows, builds MinHash+HLL sketches.  
-   - Writes `nyc_column_sketches.pkl`.
-
-3) **Compute joinability + reporting artifacts**  
-   - Quick sampled demo (prints top pairs):  
-     ```bash
-     python3 run_joinability_example.py
-     ```  
-   - Full pipeline (CSV + charts, with optional HTML):  
-     ```bash
-     python3 run_join_graph.py
-     ```  
-     Uses `nyc_column_sketches.pkl`, computes LAZO JS/JC, builds a dataset-level graph, and exports:
-       * `nyc_joinability_pairs.csv` — all surviving column pairs with JS/JC metrics.
-       * `reports/top_datasets_by_partners.png` — datasets that act as join hubs.
-       * `reports/top_dataset_pairs.png` — dataset pairs with the most joinable columns.
-       * `reports/containment_distribution.png` — containment distribution across matches.
-     If you still want the interactive HTML graph, call `join_graph.export_graph_to_html` inside `run_join_graph.py`.
-
-## LAZO Highlights (used here)
+## LAZO Highlights
 - MinHash signature (K=128) for Jaccard; HLL-style cardinality per column.
-- Alpha couples JS with |X|, |Y|: `alpha = (min - js_hat * max) / (1 + js_hat)`.
-- Containment estimates derive from alpha; an error-correction heuristic caps containment at theoretical maxima and recomputes JS for consistency.
 
 ## Notes
-- `datasets.ipynb` contains the original catalog crawl and domain filtering utilities.
-- Scripts assume NYC domain folder name `data.cityofnewyork.us` as created by `Domain`.
+- `find_domains.ipynb` contains the original catalog crawl and domain filtering utilities.
 - Generated files are large; `.gitignore` already excludes bulk data and env artifacts.
