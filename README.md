@@ -8,28 +8,26 @@ This repo explores the NYC Open Data (Socrata) catalog and joinability across da
   - `data_summary.py` - dataclass used for summarizing metadata of ingested datasets.
   - `dataset_sketch.py` - dataclass used for sketching columns of a dataset.
   - `join_candidate.py` - dataclass used for candidates of joinable columns.
+  - `reservoir_sampler.py` - model used to properly sample data from a stream.
 - `socrata_interface`
-  - `domain.py` - Socrata helper.
+  - `domain.py` - Socrata wrapper.
   - `io.py` - basic input output functions.
   - `transformers.py` - functions used to manipulate raw data from `domain.py` into more usable forms by models.
-  - `plotter.py` - creates graphs based off of metadata gotten using `domain.py`. (WIP)
 - `lazo`
   - `dataset_sketch_process.py` - process used to create dataset sketches.
-  - `join_graph.py` - builds dataset-level graph (also offers pyvis HTML export if needed). (WIP)
   - `joinability_service.py` - uses datasketch library to enable quick and succinct calculations of Jaccard Similarity using MinHashing
-  - `run_join_graph.py` - end-to-end: load sketches, compute joinability, export CSV + static charts. (WIP)
-  - `visualize_joinability.py` - visualizes joinability based on results. (WIP)
-- `deepjoin` (TO BE LABELED)
-  - `config.py`
-  - `deepjoin_all_api.py`
-  - `deepjoin_barchart.py`
-  - `deepjoin_visualize.py`
-  - `encoder.py`
-  - `sample_loader.py`
-  - `sampler.py`
+- `deepjoin`
+  - `deepjoin_service.py` - mimics the deepjoin strategy for discovering joinability by embedding columns and finding near by columns spatially.
 - `util`
   - `decorators.py` - decorators used for retry logic and logging.
   - `util.py` - utility functions to create directories and loggers.
+- `visualize` (WIP)
+  - `deepjoin_barchart.py`
+  - `deepjoin_visualize.py`
+  - `join_graph.py` - builds dataset-level graph (also offers pyvis HTML export if needed).
+  - `plotter.py` - creates graphs based off of metadata gotten using `domain.py`. 
+  - `run_join_graph.py` - end-to-end: load sketches, compute joinability, export CSV + static charts. (WIP)
+  - `visualize_joinability.py` - visualizes joinability based on results. (WIP)
 - `downloader.ipnb` - notebook that is currently being used as a testing ground.
 - `graphics.ipynb` - notebook that allows for simple use of `plotter.py`. (WIP)
 - `city_pops.csv` - csv containing population data and city names for domains to be used by `graphics.ipynb`.
@@ -37,7 +35,7 @@ This repo explores the NYC Open Data (Socrata) catalog and joinability across da
 - `socrata_domains.txt` / `socrata_domains_cities_only.txt` - discovered Socrata portals, filtered to city portals.
 - Outputs (generated): `data/`, `logs/`, `reports/`.
 
-## Setup
+## Setup (WIP)
 ```bash
 python -m venv .venv
 source .venv/bin/activate
