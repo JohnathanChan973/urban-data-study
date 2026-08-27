@@ -28,6 +28,10 @@ This repo explores the NYC Open Data (Socrata) catalog and joinability across da
   - `plotter.py` - creates graphs based off of metadata gotten using `domain.py`. 
   - `run_join_graph.py` - end-to-end: load sketches, compute joinability, export CSV + static charts. (WIP)
   - `visualize_joinability.py` - visualizes joinability based on results. (WIP)
+- `examples`
+  - `deepjoin.ipynb` - example behavior of using deepjoin for joinability.
+  - `lazo.ipynb` - example behavior of using LAZO for joinability.
+  - `summary.ipynb` - example behavior of summarizing datasets.
 - `downloader.ipnb` - notebook that is currently being used as a testing ground.
 - `graphics.ipynb` - notebook that allows for simple use of `plotter.py`. (WIP)
 - `city_pops.csv` - csv containing population data and city names for domains to be used by `graphics.ipynb`.
