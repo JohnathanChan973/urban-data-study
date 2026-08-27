@@ -4,7 +4,7 @@ from models.column_sketch import ColumnSketch
 from models.dataset_sketch import DatasetSketch
 from models.join_candidate import JoinCandidate
 
-class JoinabilityService:
+class LAZOService:
     def __init__(self, containment_threshold: float = 0.7, num_part: int = 32):
         self.threshold = containment_threshold
         self.num_part = num_part

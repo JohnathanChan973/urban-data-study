@@ -1,6 +1,6 @@
 import pytest
 from datasketch import HyperLogLog, MinHash
-from lazo.joinability_service import JoinabilityService
+from lazo.lazo_service import JoinabilityService
 from models.column_sketch import ColumnSketch
 from models.dataset_sketch import DatasetSketch
 from models.join_candidate import JoinCandidate
