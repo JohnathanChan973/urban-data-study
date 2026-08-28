@@ -117,6 +117,7 @@ class DeepJoinService:
         self,
         query_values: List[str],
         top_k: int = 5,
+        query_column_name: Optional[str] = None,
         query_dataset_id: Optional[str] = None,
     ) -> List[JoinCandidate]:
         """Query the index for top_k join candidates matching a query column."""
@@ -149,6 +150,8 @@ class DeepJoinService:
                 JoinCandidate(
                     target_dataset_id=ds_id,
                     target_column_name=col_name,
+                    query_dataset_id=query_dataset_id,
+                    query_column_name=query_column_name,
                     similarity_score=float(score),
                 )
             )

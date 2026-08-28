@@ -75,7 +75,10 @@ class LAZOService:
 
             candidates.append(
                 JoinCandidate(
-                    target_dataset_id=ds_id, target_column_name=col_name
+                    target_dataset_id=ds_id, 
+                    target_column_name=col_name,
+                    query_dataset_id=query_dataset_id,
+                    query_column_name=query_sketch.column_name,
                 )
             )
 

@@ -8,7 +8,6 @@ from adjustText import adjust_text
 from tqdm.auto import tqdm
 from pathlib import Path
 
-
 def tagcloud(self, summary, wc : WordCloud, log = True):
     counts = summary.tags
     SKIPPED_TAGS = ["tif", "kml", "kmz", "gis"]
@@ -94,7 +93,7 @@ def pie(self, summary):
     
     plt.tight_layout()
 
-def plot_tabular_percentage_by_city(self, top_n=None, min_datasets=10):
+def plot_tabular_percentage_by_city(summary, top_n=None, min_datasets=10):
     """
     Create a bar chart showing the percentage of tabular datasets for each city.
     
@@ -102,9 +101,7 @@ def plot_tabular_percentage_by_city(self, top_n=None, min_datasets=10):
         save_path: Optional path to save the figure. If None, displays interactively.
         top_n: If specified, only show top N cities by total dataset count
         min_datasets: Minimum number of datasets required to include a city
-    """
-    print("Calculating tabular percentages for each city...")
-    
+    """    
     city_stats = []
     
     for domain in tqdm(self.all_domain.all_domain, desc="Processing cities", unit="city"):
