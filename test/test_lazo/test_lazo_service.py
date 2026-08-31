@@ -1,6 +1,6 @@
 import pytest
 from datasketch import HyperLogLog, MinHash
-from lazo.lazo_service import JoinabilityService
+from lazo.lazo_service import LAZOService
 from models.column_sketch import ColumnSketch
 from models.dataset_sketch import DatasetSketch
 from models.join_candidate import JoinCandidate
@@ -29,7 +29,7 @@ def create_column_sketch(
 def sample_data():
     """Generates mock datasets with known overlapping columns."""
     # Shared domain values
-    user_ids_small = [f"usr_{i}" for i in range(100)]
+    user_ids_small = [f"usr_{i}" for i in range(300)]
     user_ids_large = [f"usr_{i}" for i in range(1000)]
     zip_codes = [f"070{i:02d}" for i in range(50)]
     random_strings = [f"rand_{i}" for i in range(200)]
@@ -54,7 +54,7 @@ def sample_data():
 
 def test_stage_and_index_datasets(sample_data):
     """Verifies that datasets can be staged and indexed without error."""
-    service = JoinabilityService()
+    service = LAZOService()
 
     service.stage_dataset(sample_data["ds1"])
     service.stage_dataset(sample_data["ds2"])
@@ -70,26 +70,31 @@ def test_stage_and_index_datasets(sample_data):
     service.build_index()
 
 def test_dataset_containment_query_finds_matches(sample_data):
-    """Verifies that searching with a dataset column finds joinable columns across datasets."""
-    service = JoinabilityService()
+    """Verifies that searching with a smaller dataset column finds its containing column in a larger dataset."""
+    service = LAZOService()
     service.stage_dataset(sample_data["ds1"])
     service.stage_dataset(sample_data["ds2"])
     service.build_index()
 
-    # Query using user_id from ds2 (100 IDs from ds1 are contained within ds2's 1000 IDs)
-    query_col = sample_data["ds2"].column_sketches["customer_id"]
+    # Query using user_id from ds1 (ds_users) [100 items]
+    query_col = sample_data["ds1"].column_sketches["user_id"]
+    
     matches = service.find_joinable_columns(
-        query_sketch=query_col, query_dataset_id="ds_users"
+        query_sketch=query_col, 
+        query_dataset_id="ds_users"
     )
 
     assert len(matches) == 1
     assert matches[0] == JoinCandidate(
-        target_dataset_id="ds_orders", target_column_name="customer_id"
+        target_dataset_id="ds_orders", 
+        target_column_name="customer_id",
+        query_dataset_id="ds_users", 
+        query_column_name="user_id"
     )
 
 def test_filters_out_self_joins(sample_data):
     """Verifies that passing query_dataset_id excludes columns from the same dataset."""
-    service = JoinabilityService()
+    service = LAZOService()
     service.stage_dataset(sample_data["ds1"])
     service.build_index()
 
@@ -103,7 +108,7 @@ def test_filters_out_self_joins(sample_data):
 
 def test_single_column_staging_and_one_off_query(sample_data):
     """Tests staging standalone single columns and running one-off queries (query_dataset_id=None)."""
-    service = JoinabilityService()
+    service = LAZOService()
 
     # Stage a single column independently
     standalone_col = create_column_sketch(
@@ -133,7 +138,7 @@ def test_single_column_staging_and_one_off_query(sample_data):
 
 def test_empty_query_sketch_returns_no_matches():
     """Verifies that an unpopulated/empty column sketch returns an empty result list safely."""
-    service = JoinabilityService()
+    service = LAZOService()
 
     empty_col = ColumnSketch(column_name="empty")
     empty_col.minhash = MinHash(num_perm=128)

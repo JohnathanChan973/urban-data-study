@@ -2,12 +2,8 @@ import math
 import json
 import matplotlib.pyplot as plt
 import pandas as pd
-import numpy as np
 from wordcloud import WordCloud
-from adjustText import adjust_text
-from tqdm.auto import tqdm
-from pathlib import Path
-
+# from tqdm.auto import tqdm
 
 def tagcloud(self, summary, wc : WordCloud, log = True):
     counts = summary.tags
@@ -94,7 +90,7 @@ def pie(self, summary):
     
     plt.tight_layout()
 
-def plot_tabular_percentage_by_city(self, top_n=None, min_datasets=10):
+def plot_tabular_percentage_by_city(summary, top_n=None, min_datasets=10):
     """
     Create a bar chart showing the percentage of tabular datasets for each city.
     
@@ -102,41 +98,39 @@ def plot_tabular_percentage_by_city(self, top_n=None, min_datasets=10):
         save_path: Optional path to save the figure. If None, displays interactively.
         top_n: If specified, only show top N cities by total dataset count
         min_datasets: Minimum number of datasets required to include a city
-    """
-    print("Calculating tabular percentages for each city...")
-    
+    """    
     city_stats = []
     
-    for domain in tqdm(self.all_domain.all_domain, desc="Processing cities", unit="city"):
-        summary_dir = domain.metadatadir / "summary"
+    # for domain in tqdm(self.all_domain.all_domain, desc="Processing cities", unit="city"):
+    #     summary_dir = domain.metadatadir / "summary"
         
-        if not summary_dir.exists():
-            continue
+    #     if not summary_dir.exists():
+    #         continue
         
-        # Load format data for this city
-        formats_file = summary_dir / "formats.json"
-        if not formats_file.exists():
-            continue
+    #     # Load format data for this city
+    #     formats_file = summary_dir / "formats.json"
+    #     if not formats_file.exists():
+    #         continue
         
-        with open(formats_file) as f:
-            formats = json.load(f)
+    #     with open(formats_file) as f:
+    #         formats = json.load(f)
         
-        # Calculate total datasets and tabular count
-        total_datasets = sum(formats.values())
-        tabular_count = formats.get('tabular', 0)
+    #     # Calculate total datasets and tabular count
+    #     total_datasets = sum(formats.values())
+    #     tabular_count = formats.get('tabular', 0)
         
-        # Skip cities with too few datasets
-        if total_datasets < min_datasets:
-            continue
+    #     # Skip cities with too few datasets
+    #     if total_datasets < min_datasets:
+    #         continue
         
-        tabular_percentage = (tabular_count / total_datasets * 100) if total_datasets > 0 else 0
+    #     tabular_percentage = (tabular_count / total_datasets * 100) if total_datasets > 0 else 0
         
-        city_stats.append({
-            'city': domain.domain,
-            'total_datasets': total_datasets,
-            'tabular_count': tabular_count,
-            'tabular_percentage': tabular_percentage
-        })
+    #     city_stats.append({
+    #         'city': domain.domain,
+    #         'total_datasets': total_datasets,
+    #         'tabular_count': tabular_count,
+    #         'tabular_percentage': tabular_percentage
+    #     })
     
     if not city_stats:
         print("No city data available. Run summarize_metadata() for individual domains first.")
