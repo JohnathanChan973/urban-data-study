@@ -56,7 +56,7 @@ Tokens (optional but recommended to avoid throttling): set `SODAPY_APPTOKEN` or 
 ## Workflow
 1. Use the domain object to connect to a city's socrata service.
 2. Acquire the desired data using domain methods and alter them as desired using functions in transformers.
-3. Input the transformed data into the provided models.
+3. Input the transformed data into the provided models (LAZO, DeepJoin, Summary).
 
 ## LAZO Highlights
 - MinHash signature (K=128) for Jaccard; HLL-style cardinality per column.
