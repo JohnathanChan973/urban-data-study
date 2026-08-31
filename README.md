@@ -39,15 +39,24 @@ This repo explores the NYC Open Data (Socrata) catalog and joinability across da
 - `socrata_domains.txt` / `socrata_domains_cities_only.txt` - discovered Socrata portals, filtered to city portals.
 - Outputs (generated): `data/`, `logs/`, `reports/`.
 
-## Setup (WIP)
+## Setup
+pip:
 ```bash
 python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install . # `pip install -e .[dev]` for pytest
+```
+uv:
+```bash
+uv sync # `uv sync --no-dev` if is pytest not wanted
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 ```
 Tokens (optional but recommended to avoid throttling): set `SODAPY_APPTOKEN` or per-domain creds in your shell env before running scripts.
 
-## Workflow (BEING REFACTORED)
+## Workflow
+1. Use the domain object to connect to a city's socrata service.
+2. Acquire the desired data using domain methods and alter them as desired using functions in transformers.
+3. Input the transformed data into the provided models.
 
 ## LAZO Highlights
 - MinHash signature (K=128) for Jaccard; HLL-style cardinality per column.
